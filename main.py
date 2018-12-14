@@ -2,6 +2,7 @@
 import pandas as pd
 from collections import OrderedDict
 from sys import argv
+from bplustree import BPlusTree
 
 #%%
 # arquivo = "/home/ramon/Documents/PycharmProjects/cbd/consulta_cand_2018/consulta_cand_2018_BR.csv" if len(argv) < 2 else argv[1]
@@ -97,6 +98,66 @@ class HashTable(object):
 
 
 new_table = HashTable(arquivo)
+
+#%%
+class BtreeTable(object):
+    def __init__(self, datafile: str,
+                 filename: str = "/home/ramon/Documents/PycharmProjects/cbd/BtreeTable.db",
+                 index: str = "SQ_CANDIDATO"):
+        self.datafile = datafile
+        self.filename = filename
+        self.index = index
+
+        self.data = pd.read_csv(datafile, sep=",", header=0,
+                                encoding="latin1").sort_values(index)
+        
+        # this file is a bit different from the others
+        # it can be written ahead without being closed
+        # which is why it will become a persistent attribute
+        self.tree = BPlusTree(self.filename, order=50)
+        
+        # dataframe still needs to be parsed line by line
+        for record in self.data.iterrows():
+            btree_value = ""
+            
+            # padding values
+            for key, value in columns.items():
+                btree_value += ("{:*<" + str(value) + "}").format(record[1][key])
+
+            # converting to binary
+            btree_value = btree_value.encode()
+            
+            # B-tree indices must be integers
+            tree_index = int(record[1][index])
+            self.tree[tree_index] = btree_value
+                
+        # commits changes without closing file
+        self.tree.get(len(self.tree))
+        self.tree.checkpoint()
+    
+    # closes file and erases write-ahead log
+    def close(self):
+        self.tree.close()
+
+
+new_table = BtreeTable(arquivo)
+
+# load a single record to memory (parameter is index value)
+new_table.tree.get(250000600364)
+
+# load a range of values to memory
+new_table.tree[250000600365:250000600369]
+
+# loop through records without loading all of them to memory
+for key, value in new_table.tree.items():
+    pass
+
+# load entire db to memory (not recommended)
+# list(new_table.tree.items())
+
+# commit changes, close db and erases log
+new_table.close()
+
 
 #%%
 num_records_per_block = 5
