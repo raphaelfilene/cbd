@@ -9,6 +9,11 @@ name = "pypi"
 jupyter = "*"
 six = "*"
 pandas = "*"
+tox = "*"
+persistent = "*"
+btrees = "*"
+bplustree = "*"
+tqdm = "*"
 
 [requires]
 python_version = "3.6"
