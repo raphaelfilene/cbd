@@ -16,7 +16,27 @@ class OrderedTable(Table):
             f.close()
 
     def nested_join(self, table: Table, index: str = ""):
-        raise NotImplementedError
+        field = self.index if not index else index
+        merged = []
+
+        for record in self.data.iterrows():
+            for row in table.data.iterrows():
+                merge_value = ""
+
+                try:
+                    if record[1][field] == row[1][field]:
+                        for key, value in self.columns.items():
+                            merge_value += ("{:*<" + str(value) + "}").format(record[1][key])
+                except KeyError:
+                    if record[0] == row[0]:
+                        for key, value in self.columns.items():
+                            merge_value += ("{:*<" + str(value) + "}").format(record[0])
+                finally:
+                    merged.append(merge_value + "\n")
+
+        with open("orderedjoin.txt", "w") as f:
+            f.writelines(merged)
+            f.close()
 
     def merge_join(self, table: Table, index: str = ""):
         field = self.index if not index else index
@@ -26,11 +46,9 @@ class OrderedTable(Table):
                 )
         merged = []
 
-
         with open("orderedjoin.txt", "w") as f:
             for record in data.iterrows():
                 merge_value = ""
-
                 # padding values
                 for key, value in self.columns.items():
                     try:
@@ -49,5 +67,5 @@ t1 = OrderedTable("/home/ramon/Documents/PycharmProjects/cbd/consulta_cand_2018/
 t2 = OrderedTable("/home/ramon/Documents/PycharmProjects/cbd/consulta_cand_2018/consulta_cand_2019_RJ_modified.csv",
                 "/home/ramon/Documents/PycharmProjects/cbd/orderedrj.txt")
 
-# t1.nested_join(t2, "NR_PARTIDO")
-t1.merge_join(t2, "NR_CANDIDATO")
+t1.nested_join(t2)
+# t1.merge_join(t2, "NR_CANDIDATO")
