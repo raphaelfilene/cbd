@@ -1,3 +1,4 @@
+from itertools import zip_longest, tee
 from bplustree import BPlusTree
 from table import Table
 
@@ -39,5 +40,56 @@ class BtreeTable(Table):
     def close(self):
         self.tree.close()
 
-    def btree_join(self, table: Table):
-        raise NotImplementedError
+    def btree_join(self, table: Table, index: str = ""):
+        '''
+            Join BtreeTables without loading both of them to memory.
+        '''
+        field = self.index if not index else index
+
+        joined_tree = BPlusTree("/home/ramon/Documents/PycharmProjects/cbd/joined_result.db", order=50)
+
+        if field == self.index: # index-based join
+            joined_tree.batch_insert((
+                (i, self.tree.get(i))
+                for i in filter(lambda x: x in self.tree.keys(),
+                                               table.tree.keys())
+            ))
+        else:
+            data = self.data.set_index(field).join(
+                table.data.set_index(field), lsuffix='left', rsuffix='right',
+                how='inner')
+            for record in data.iterrows():
+                btree_value = ""
+
+                # padding values
+                for key, value in self.columns.items():
+                    try:
+                        btree_value += ("{:*<" + str(value) + "}").format(record[1][key])
+                    except KeyError: # None value
+                        continue
+
+                # converting to binary
+                btree_value = btree_value.encode()
+
+                # B-tree indices must be integers
+                try:
+                    tree_index = int(record[1][index])
+                except KeyError: # None value
+                    continue
+                joined_tree.tree[tree_index] = btree_value
+
+            # commits changes without closing file
+
+        joined_tree.close()
+
+        return True
+
+
+
+t1 = BtreeTable("/home/ramon/Documents/PycharmProjects/cbd/consulta_cand_2018/consulta_cand_2018_SP_modified.csv",
+                "/home/ramon/Documents/PycharmProjects/cbd/btreesp.db")
+
+t2 = BtreeTable("/home/ramon/Documents/PycharmProjects/cbd/consulta_cand_2018/consulta_cand_2019_RJ_modified.csv",
+                "/home/ramon/Documents/PycharmProjects/cbd/btreerj.db")
+
+t1.btree_join(t2, "NR_PARTIDO")

@@ -1,4 +1,5 @@
 from table import Table
+from collections import defaultdict
 
 class HashTable(Table):
     def __init__(self, datafile: str, filename: str = "HashTable.txt",
@@ -22,4 +23,8 @@ class HashTable(Table):
             f.close()
 
     def hash_join(self, table: Table):
+        hash_joined = defaultdict(list)
+        for s in table1:
+            h[s[index1]].append(s)
+        return [(s, r) for r in table2 for s in h[r[index2]]]
         raise NotImplementedError
