@@ -37,10 +37,11 @@ class Table():
         self.filename = filename
         self.index = index
 
-        self.data = pd.read_csv(datafile, sep=",", header=0,
+        if self.datafile:
+            self.data = pd.read_csv(self.datafile, sep=",", header=0,
                                 encoding="latin1").sort_values(index)
 
-        self.write_to_file()
+            self.write_to_file()
 
     def write_to_file(self):
         raise NotImplementedError
