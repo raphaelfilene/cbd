@@ -22,9 +22,29 @@ class HashTable(Table):
             f.writelines(to_write)
             f.close()
 
-    def hash_join(self, table: Table):
+    def hash_join(self, table: Table, index: str = ""):
+        field = self.index if not index else index
+
         hash_joined = defaultdict(list)
-        for s in table1:
-            h[s[index1]].append(s)
-        return [(s, r) for r in table2 for s in h[r[index2]]]
-        raise NotImplementedError
+
+        for record in self.data.iterrows():
+            try:
+                hvalue = int(record[1][field]) % self.hash_size
+                same_hash = table.data[table.data[field] % self.hash_size == hvalue]
+                for row in same_hash.iterrows():
+                    if record[1][field] == row[1][field]:
+                        hash_joined[hvalue].append(record)
+            except:
+                continue
+
+
+        return hash_joined
+
+
+t1 = HashTable("/home/ramon/Documents/PycharmProjects/cbd/consulta_cand_2018/consulta_cand_2018_SP_modified.csv",
+                "/home/ramon/Documents/PycharmProjects/cbd/hashsp.txt")
+
+t2 = HashTable("/home/ramon/Documents/PycharmProjects/cbd/consulta_cand_2018/consulta_cand_2019_RJ_modified.csv",
+                "/home/ramon/Documents/PycharmProjects/cbd/hashrj.txt")
+
+t1.hash_join(t2, "NR_PARTIDO")
